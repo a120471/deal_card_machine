@@ -66,14 +66,12 @@ if __name__ == '__main__':
       delta_degree = tar_degree - cur_degree
       cur_degree = tar_degree
 
-      print(delta_degree)
       _rotate_yaw(motor_yaw, delta_degree)
 
-      motor_deal_card.speed_ratio(1)
-      time.sleep(0.13)
+      motor_deal_card.speed_ratio(0.5)
+      time.sleep(0.2)
       motor_deal_card.stop()
       time.sleep(0.5)
 
     # return to the initial position
-    print(-cur_degree)
     _rotate_yaw(motor_yaw, -cur_degree)
