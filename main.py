@@ -15,16 +15,15 @@ def indices_to_degrees(indices):
 
 
 if __name__ == '__main__':
-  lcd_bl = Pin(25, mode=Pin.OUT, value=1)
-
-  # while True:
-  #   if rp2.bootsel_button() == 1:
-  #     break
-  #   time.sleep(0.1)
+  lcd_bl = Pin(25, mode=Pin.OUT, value=0)
+  while True:
+    if rp2.bootsel_button() == 1:
+      break
+    time.sleep(0.1)
 
   indices = dou_di_zhu_shuffle()
-  print(indices)
   degrees = indices_to_degrees(indices)
+  # print(indices)
   # print(degrees)
 
   # PID version
@@ -45,39 +44,36 @@ if __name__ == '__main__':
 
       time.sleep(1)
   else:
+    def _rotate_yaw(motor, delta_degree):
+      if delta_degree == 0:
+        return
+
+      k_MOTOR_SPEED_RATIO = 0.4
+      if delta_degree > 0:
+        motor.speed_ratio(k_MOTOR_SPEED_RATIO)
+      else:
+        motor.speed_ratio(-k_MOTOR_SPEED_RATIO)
+      dt = abs(delta_degree) * 0.003 + 0.1
+      time.sleep(dt)
+      motor.stop()
+
+      time.sleep(1)
+
     motor_yaw = Motor(5, 4)
     motor_deal_card = Motor(3, 2)
     cur_degree = 0
-    motor_speed_ratio = 0.4
-    i = 0
     for tar_degree in degrees:
       delta_degree = tar_degree - cur_degree
-      delta_degree = 180
       cur_degree = tar_degree
 
-      # if delta_degree > 0:
-      #   motor_yaw.speed_ratio(motor_speed_ratio)
-      # else:
-      #   motor_yaw.speed_ratio(-motor_speed_ratio)
-      # dt = abs(delta_degree) * 0.004 + 0.05
-      # time.sleep(dt)
-      # motor_yaw.stop()
+      print(delta_degree)
+      _rotate_yaw(motor_yaw, delta_degree)
 
       motor_deal_card.speed_ratio(1)
-      time.sleep(0.1)
+      time.sleep(0.13)
       motor_deal_card.stop()
-
       time.sleep(0.5)
-      i = i + 1
-      if i >= 10:
-        break
 
-    # # return to the initial position
-    # if -cur_degree > 0:
-    #   motor_yaw.speed_ratio(motor_speed_ratio)
-    # else:
-    #   motor_yaw.speed_ratio(-motor_speed_ratio)
-    # cur_degree = 0
-    # dt = abs(delta_degree) * 0.005
-    # time.sleep(dt)
-    # motor_yaw.stop()
+    # return to the initial position
+    print(-cur_degree)
+    _rotate_yaw(motor_yaw, -cur_degree)

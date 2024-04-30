@@ -17,5 +17,5 @@ def dou_di_zhu_shuffle():
   """
   deck = list(range(1, k_CARD_NUM + 1))
   Fisher_Yates_Shuffle(deck)
-  print(deck)
+  # print(deck)
   return [k_NUM_OF_PLAYERS if i > k_CARD_NUM - k_BOTTOM_CARD_NUM else i % k_NUM_OF_PLAYERS for i in deck]
