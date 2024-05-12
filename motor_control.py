@@ -159,14 +159,17 @@ class PID:
         return u
 
     # Function for closed loop motor position control
-    def set_position(self, tar_deg, threshold=1.0, timeout=5):
+    def set_position(self, tar_deg, threshold=0.1, timeout=5.0):
         """
         Args:
-            tar_motor_rot_deg: target motor position in degrees
+            tar_deg: target motor position in degrees
             threshold: threshold for stopping the motor
             timeout: timeout seconds for stopping the motor
         """
         cur_deg = self.motor.read_pos() * 360 / self.pos_ticks_per_rev
+        if abs(tar_deg - cur_deg) < threshold:
+            return 0
+
         reaching_target_time = 0
         running_time = 0
         while reaching_target_time < 0.1 and running_time < timeout:
@@ -181,12 +184,12 @@ class PID:
             time.sleep(dt)
 
             cur_deg = self.motor.read_pos() * 360 / self.pos_ticks_per_rev
-            if abs(cur_deg - tar_deg) < threshold:
+            if abs(tar_deg - cur_deg) < threshold:
                 reaching_target_time += dt
             running_time += dt
 
         self.stop()
-        # print(f"running time: {running_time:.02f}")  # For debugging
+        return running_time
 
     # Function for closed loop speed control. The parameters of this function
     # is not tuned since this function is not used for now.
