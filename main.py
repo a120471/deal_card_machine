@@ -26,18 +26,19 @@ if __name__ == "__main__":
     # print(indices)
     # print(degrees)
 
-    motor_yaw = Motor(5, 4, 1, 0, True)
+    motor_yaw = Motor(5, 4, 1, 0, reverse_direction=True)
     pid_yaw = PID(motor_yaw, kp=0.03, max_u=0.9)
-    # motor_deal_card = Motor(3, 2)
+    motor_deal_card = Motor(3, 2)
     elapsed_time = 0
     for tar_deg in degrees:
         elapsed_time += pid_yaw.set_position(tar_deg, threshold=0.2)
 
-        # motor_deal_card.speed_ratio(0.1)
-        # time.sleep(0.01)
-        # motor_deal_card.stop()
+        motor_deal_card.speed_ratio(0.4)
+        time.sleep(0.4)
+        motor_deal_card.speed_ratio(-0.4)
+        time.sleep(0.3)
+        motor_deal_card.stop()
 
-        time.sleep(0.5)
         # print(
         #     f"{motor_yaw.read_pos() * 360 / pid_yaw.pos_ticks_per_rev:.3f} -> {tar_deg}"
         # )
