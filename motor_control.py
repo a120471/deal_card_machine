@@ -44,7 +44,6 @@ class Motor:
         out2_id,
         hall_in1_id=None,
         hall_in2_id=None,
-        reverse_direction=False,
         freq=50,
     ):
         # Variable for recording the current position of the encoder
@@ -52,9 +51,6 @@ class Motor:
 
         # For this specific motor, the minimum supported speed ratio is around 0.055
         self.MIN_MOTOR_SPEED_RATIO = 0.055
-
-        # Whether the motor should rotate in the reverse direction
-        self.REVERSE_DIRECTION = reverse_direction
 
         self.O1 = PWM(Pin(out1_id, mode=Pin.OUT), freq=freq, duty_u16=U16_MAX)
         self.O2 = PWM(Pin(out2_id, mode=Pin.OUT), freq=freq, duty_u16=U16_MAX)
@@ -70,15 +66,13 @@ class Motor:
     # Interrupt handler
     def handle_interrupt(self, _):
         if self.H2.value() == 0:
-            self._pos = self._pos - (1 if self.REVERSE_DIRECTION else -1)
+            self._pos += 1
         else:
-            self._pos = self._pos + (1 if self.REVERSE_DIRECTION else -1)
+            self._pos -= 1
 
     # A function for speed control without feedback(Open loop speed control)
     def speed(self, val):
         pwm = _clip(abs(val), U16_MIN, U16_MAX)
-        if self.REVERSE_DIRECTION:
-            val = -val
 
         if val > 0:
             self.O1.duty_u16(U16_MAX)
@@ -133,7 +127,7 @@ class PID:
 
     # Function for calculating the Feedback signal. It takes the current value,
     # user target value and the delta time.
-    def eval_u(self, cur_val, tar_val, dt):
+    def _eval_u(self, cur_val, tar_val, dt):
         # Proportional
         e = tar_val - cur_val
 
@@ -170,26 +164,34 @@ class PID:
         if abs(tar_deg - cur_deg) < threshold:
             return 0
 
-        reaching_target_time = 0
-        running_time = 0
-        while reaching_target_time < 0.1 and running_time < timeout:
+        start_time = time.time()
+        stable_count = 0
+        dt = 0.01  # in second
+        while True:
+            cur_deg = self.motor.read_pos() * 360 / self.pos_ticks_per_rev
+            error = abs(tar_deg - cur_deg)
+            print(cur_deg, tar_deg, error)  # For debugging
+
+            if error < threshold:
+                stable_count += 1
+                if stable_count > 10:
+                    break
+            else:
+                stable_count = 0
+
+            if time.time() - start_time > timeout:
+                break
+
             # Control signal call
-            dt = 0.01  # in second
-            x = self.eval_u(cur_deg, tar_deg, dt)
+            x = self._eval_u(cur_deg, tar_deg, dt)
 
             # Set the speed
             self.motor.speed_ratio(x)
-
             # Constant delay
             time.sleep(dt)
 
-            cur_deg = self.motor.read_pos() * 360 / self.pos_ticks_per_rev
-            if abs(tar_deg - cur_deg) < threshold:
-                reaching_target_time += dt
-            running_time += dt
-
         self.stop()
-        return running_time
+        return time.time()
 
     # Function for closed loop speed control. The parameters of this function
     # is not tuned since this function is not used for now.
@@ -214,7 +216,7 @@ class PID:
         cur_speed = pos_speed * 60 / self.pos_ticks_per_rev
 
         # Call for control signal
-        x = int(self.eval_u(cur_speed, tar_speed, dt))
+        x = int(self._eval_u(cur_speed, tar_speed, dt))
 
         # Set the motor speed
         self.motor.speed(x)

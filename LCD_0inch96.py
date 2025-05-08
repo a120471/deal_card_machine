@@ -105,6 +105,14 @@ class LCD_0inch96(framebuf.FrameBuffer):
         self.cs(1)
 
 
+def display_text(text, x=0, y=0, line_spacing=10, color=k_BLUE):
+    lcd = LCD_0inch96()
+    lcd.fill(k_BLACK)
+    lines = text.split("\n")
+    for i, line in enumerate(lines):
+        lcd.text(line, x, y + i * line_spacing, color)
+    lcd.refresh_buffer()
+
 # if __name__=='__main__':
 #     lcd = LCD_0inch96()
 
